@@ -41,7 +41,8 @@ function parse(expr) {
     } else if (t === '(') {
       consume(t);
       var expr = parseExpr();
-      if (peek() !== ')') throw new SyntaxError('expected )');
+      if (peek() !== ')')
+        throw new SyntaxError('ExpressionError: Brackets must be paired');
       consume(')');
       return expr;
     } else {
@@ -55,6 +56,9 @@ function parse(expr) {
       consume(t);
       var rhs = parsePrimaryExpr();
       expr = { type: t, left: expr, right: rhs };
+      if (expr.type === '/' && expr.right.value === '0') {
+        throw new SyntaxError('TypeError: Division by zero.');
+      }
       t = peek();
     }
     return expr;
@@ -72,30 +76,34 @@ function parse(expr) {
   }
   var result = parseExpr();
   if (position !== tokens.length)
-    throw new SyntaxError("unexpected '" + peek() + "'");
+    throw new SyntaxError('ExpressionError: Brackets must be paired');
 
   return result;
 }
 function expressionCalculator(code) {
-    var variables = Object.create(null);
-    variables.e = Math.E;
-    variables.pi = Math.PI;
+  var variables = Object.create(null);
+  variables.e = Math.E;
+  variables.pi = Math.PI;
 
-    function evaluate(obj) {
-        switch (obj.type) {
-        case "number":  return parseInt(obj.value);
-        case "name":  return variables[obj.id] || 0;
-        case "+":  return evaluate(obj.left) + evaluate(obj.right);
-        case "-":  return evaluate(obj.left) - evaluate(obj.right);
-        case "*":  return evaluate(obj.left) * evaluate(obj.right);
-        case "/":  return evaluate(obj.left) / evaluate(obj.right);
-        }
+  function evaluate(obj) {
+    switch (obj.type) {
+      case 'number':
+        return parseInt(obj.value);
+      case 'name':
+        return variables[obj.id] || 0;
+      case '+':
+        return evaluate(obj.left) + evaluate(obj.right);
+      case '-':
+        return evaluate(obj.left) - evaluate(obj.right);
+      case '*':
+        return evaluate(obj.left) * evaluate(obj.right);
+      case '/':
+        return evaluate(obj.left) / evaluate(obj.right);
     }
-    return evaluate(parse(code));
+  }
+  return evaluate(parse(code));
 }
-
 
 module.exports = {
-    expressionCalculator
-}
-// console.log(evaluateAsFloat('(2 + 2)*2'));
+  expressionCalculator
+};
